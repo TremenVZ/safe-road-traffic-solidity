@@ -1,0 +1,19 @@
+{
+    "config":{
+    "chainid":15,
+    "eip150Block":0,
+    "eip153Block":0,
+    "eip155Block":0,
+    "eip158Block":0,
+    "homesteadBlock":0,
+    "byzantiumBlock":0,
+    "constantinopleBlock":0},
+    "gasLimit":"3000000000",
+    "difficulty":"0x4",
+    "nonce":"0x0000000000000033",
+    "timestamp":"0x0",
+    "alloc":{
+        "0xF144cDfa2167d5b23dB07eCDEe1eD62e22F1b48C":{"balance":"1000000000000000000000"},
+        "0x4Ff1DF473c78Ad179fd2be8f308054D68f70CA89":{"balance":"50000000000000000000"},
+        "0x26ecAAd8Ca98ADc567FC245d8c1a31645f5B19a3":{"balance":"50000000000000000000"},
+        "0xB1289bd00750c910d246213bC8a94494c5217d01":{"balance":"50000000000000000000"}}}

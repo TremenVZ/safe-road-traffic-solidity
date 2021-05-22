@@ -1,0 +1,154 @@
+pragma solidity >=0.7.0 <0.9.0;
+pragma experimental ABIEncoderV2;
+contract DPS {
+    struct Vehicle{     
+        string category;
+        uint price;         //рыночная стоимость(eth)
+        uint lifetime;      //срок эксплуатации(лет)
+        address owner;}
+    struct Driver{
+        string name;
+        string certificate_id;
+        uint experience;    //водительский стаж(лет)
+        uint money;
+        string role;}//ролевая система: true - сотрудник дпс, false - водитель
+    struct Certificate{
+        address owner;
+        uint validity_day;        //
+        uint validity_month;      //срок действия
+        uint validity_year;}      //
+    struct Message{
+        address receiver;
+        string content;}
+    struct Categories_list{
+        bool A;
+        bool B;
+        bool C;}
+    mapping (address => Driver) Drivers;
+    mapping (string => Certificate) Certificates;
+    mapping (string => Categories_list) Categories;
+    Vehicle[] public Vehicles;
+    Message[] public messages;
+    address def_acc = 0x0000000000000000000000000000000000000000;
+    constructor(){                                                      
+        address police = 0x4Ff1DF473c78Ad179fd2be8f308054D68f70CA89;    //пользователи
+        address driver1 = 0x26ecAAd8Ca98ADc567FC245d8c1a31645f5B19a3;
+        address driver2 = 0xB1289bd00750c910d246213bC8a94494c5217d01;
+        Drivers[police].name = "Ivanov Ivan Ivanovich";
+        Drivers[police].certificate_id = "";
+        Drivers[police].experience = 2;
+        Drivers[police].money = police.balance;
+        Drivers[police].role = "police";
+        Drivers[driver1].name = "Semenov Semen Semenovich";
+        Drivers[driver1].certificate_id = "";
+        Drivers[driver1].experience = 5;
+        Drivers[driver1].money = driver1.balance;
+        Drivers[driver1].role = "driver";
+        Drivers[driver2].name = "Petrov Petr Petrovich";
+        Drivers[driver2].certificate_id = "";
+        Drivers[driver2].experience = 10;
+        Drivers[driver2].money = driver2.balance;
+        Drivers[driver2].role = "driver";
+        Certificates["000"].validity_day = 11;      //водительские удостоверения
+        Certificates["000"].validity_month = 1;
+        Certificates["000"].validity_year = 2021;
+        Categories["000"].A = true;
+        Certificates["111"].validity_day = 12;
+        Certificates["111"].validity_month = 5;
+        Certificates["111"].validity_year = 2025;
+        Categories["111"].B = true;
+        Certificates["222"].validity_day = 12;
+        Certificates["222"].validity_month = 9;
+        Certificates["222"].validity_year = 2020;
+        Categories["222"].C = true;
+        Certificates["333"].validity_day = 13;
+        Certificates["333"].validity_month = 2;
+        Certificates["333"].validity_year = 2027;
+        Categories["333"].A = true;
+        Certificates["444"].validity_day = 11;
+        Certificates["444"].validity_month = 12;
+        Certificates["444"].validity_year = 2026;
+        Categories["444"].B = true;
+        Certificates["555"].validity_day = 24;
+        Certificates["555"].validity_month = 6;
+        Certificates["555"].validity_year = 2029;
+        Categories["555"].C = true;
+        Certificates["666"].validity_day = 31;
+        Certificates["666"].validity_month = 3;
+        Certificates["666"].validity_year = 2030;
+        Categories["666"].A = true;}
+    function New_driver(string memory name, uint experience) public{
+        require(keccak256(abi.encodePacked(Drivers[msg.sender].name)) == keccak256(abi.encodePacked("")), "already registered");
+        Drivers[msg.sender].name = name;
+        Drivers[msg.sender].certificate_id = "";
+        Drivers[msg.sender].experience = experience;
+        Drivers[msg.sender].money = msg.sender.balance;
+        Drivers[msg.sender].role = "driver";}
+    function Add_certificate(string memory id, uint day, uint month, uint year, string memory category) public{
+        require(keccak256(abi.encodePacked(Drivers[msg.sender].name)) != keccak256(abi.encodePacked("")), "not registered");
+        require(keccak256(abi.encodePacked(Drivers[msg.sender].certificate_id)) == keccak256(abi.encodePacked("")), "you already have certificate");
+        require(Certificates[id].owner == def_acc, "not your certificate");
+        if(Certificates[id].validity_day != day || Certificates[id].validity_month != month || Certificates[id].validity_year != year){
+            messages.push(Message(msg.sender,"add certificate: wrong date"));}
+        else if(!Categories[id].A && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("A"))){
+            messages.push(Message(msg.sender,"add certificate: wrong category"));}
+        else if(!Categories[id].B && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("B"))){
+            messages.push(Message(msg.sender,"add certificate: wrong category"));}
+        else if(!Categories[id].C && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("C"))){
+            messages.push(Message(msg.sender,"add certificate: wrong category"));}
+        else{
+            Certificates[id].owner = msg.sender;
+            Drivers[msg.sender].certificate_id = id;
+            messages.push(Message(msg.sender,"add certificate: successfully"));}}
+    function Add_vehicle(string memory category, uint price, uint lifetime) public{
+        if(keccak256(abi.encodePacked(Drivers[msg.sender].certificate_id)) == keccak256(abi.encodePacked(""))){
+            messages.push(Message(msg.sender,"add vehicle: need certificate"));}
+        else if(!Categories[Drivers[msg.sender].certificate_id].A && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("A"))){
+            messages.push(Message(msg.sender,"add vehicle: wrong category"));}
+        else if(!Categories[Drivers[msg.sender].certificate_id].B && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("B"))){
+            messages.push(Message(msg.sender,"add vehicle: wrong category"));}
+        else if(!Categories[Drivers[msg.sender].certificate_id].C && keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("C"))){
+            messages.push(Message(msg.sender,"add vehicle: wrong category"));}
+        else{
+            Vehicles.push(Vehicle(category, price, lifetime, msg.sender));
+            messages.push(Message(msg.sender,"add vehicle: successfully"));}}
+    function Increase_validity() public{
+        if(block.timestamp < Certificates[Drivers[msg.sender].certificate_id].validity_day * 86400
+        + (Certificates[Drivers[msg.sender].certificate_id].validity_month - 1) * 86400 * 30
+        + (Certificates[Drivers[msg.sender].certificate_id].validity_year - 1970) * 86400 * 365){
+            messages.push(Message(msg.sender,"increase validity: early"));}
+        else{
+            Certificates[Drivers[msg.sender].certificate_id].validity_year += 10;
+            messages.push(Message(msg.sender,"increase validity: successfully"));}}
+    function Add_category(string memory category) public{
+        if(keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("A")) && !Categories[Drivers[msg.sender].certificate_id].A){
+            Categories[Drivers[msg.sender].certificate_id].A = true;
+            messages.push(Message(msg.sender,"add category: successfully"));}
+        else if(keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("B")) && !Categories[Drivers[msg.sender].certificate_id].B){
+            Categories[Drivers[msg.sender].certificate_id].B = true;
+            messages.push(Message(msg.sender,"add category: successfully"));}
+        else if(keccak256(abi.encodePacked(category)) == keccak256(abi.encodePacked("C")) && !Categories[Drivers[msg.sender].certificate_id].C){
+            Categories[Drivers[msg.sender].certificate_id].C = true;
+            messages.push(Message(msg.sender,"add category: successfully"));}
+        else 
+            messages.push(Message(msg.sender,"add category: wrong category else already available"));}
+    function Update_balance() public{
+        Drivers[msg.sender].money = msg.sender.balance;}
+    function Vehicles_quantity() public view returns(uint quantity){      //в граф интерфейсе не нужен, количество ТС
+        return(Vehicles.length);}
+    function Driver_info(address adr) public view returns(string memory name, string memory certificate, uint experience, uint balance, string memory role){
+        return(Drivers[adr].name, Drivers[adr].certificate_id, Drivers[adr].experience, Drivers[adr].money, Drivers[adr].role);}
+    function Vehicle_info(uint vehicle_id) public view returns(string memory category, uint price, uint lifetime, address owner){
+        return(Vehicles[vehicle_id].category,Vehicles[vehicle_id].price,Vehicles[vehicle_id].lifetime,Vehicles[vehicle_id].owner);}
+    function Certificate_info(string memory certificate_id) public view returns(address owner, uint day, uint mouth, uint year, bool A, bool B, bool C){
+        return(Certificates[certificate_id].owner, Certificates[certificate_id].validity_day, Certificates[certificate_id].validity_month,
+        Certificates[certificate_id].validity_year, Categories[certificate_id].A, Categories[certificate_id].B, Categories[certificate_id].C);}
+    function Messages_quantity() public view returns(uint quantity){          //в граф интерфейсе не нужен, количество сообщений
+        return(messages.length);}
+    function Read_message(uint id) public view returns(string memory message){        //в граф интерфейсе не нужен, прочитать сообщение
+        require(msg.sender == messages[id].receiver, "not receiver");
+        return(messages[id].content);}
+    function Get_messages() public view returns(Message[] memory){
+        return(messages);}
+    function Get_vehicles() public view returns(Vehicle[] memory){
+        return(Vehicles);}}
